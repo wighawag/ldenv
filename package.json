@@ -1,6 +1,7 @@
 {
 	"name": "dotenv-set",
-	"version": "0.0.3",
+	"version": "0.1.0",
+	"description": "load multiple env files based on mode",
 	"publishConfig": {
 		"access": "public"
 	},
@@ -8,19 +9,23 @@
 	"main": "dist/index.cjs",
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
-  "bin": {
-		"doenv-set": "dist/cli.cjs"
-	},
-	"devDependencies": {
-		"@types/node": "^18.15.5",
-		"tsup": "^6.7.0",
-		"typescript": "^4.9.5"
-	},
-	"scripts": {
-		"build": "tsup --entry src/index.ts --entry src/cli.ts --dts --format esm,cjs"
+	"bin": {
+		"dotenv-set": "dist/cli.cjs"
 	},
 	"dependencies": {
 		"dotenv": "^16.0.3",
 		"dotenv-expand": "^10.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^18.15.5",
+		"ipfs-gateway-emulator": "4.2.1-ipfs.2",
+		"tsup": "^6.7.0",
+		"typedoc": "^0.23.28",
+		"typescript": "^4.9.5"
+	},
+	"scripts": {
+		"build": "tsup --entry src/index.ts --entry src/cli.ts --dts --format esm,cjs",
+		"gen-docs": "typedoc --out docs src",
+		"serve-docs": "ipfs-emulator --only -d docs -p 8080"
 	}
 }
