@@ -1,6 +1,6 @@
 {
 	"name": "dotenv-set",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "load multiple env files based on mode",
 	"publishConfig": {
 		"access": "public"

@@ -30,11 +30,12 @@ export type Config = {
 	folder?: string;
 	/** This let you specify the env variable it uses to detect the mode, if not specified in the options.
 	 * By default it take the mode from the env variable 'MODE'
+	 * It can also be a list of string and it will take the first one that is defined
 	 */
-	useModeEnv?: string;
+	useModeEnv?: string | string[];
 };
 
-type ResolvedConfig = Config & {folder: string; useModeEnv: string};
+type ResolvedConfig = Config & {folder: string; useModeEnv: string | string[]};
 
 /**
  * Uses [dotenv](https://github.com/motdotla/dotenv) and [dotenv-expand](https://github.com/motdotla/dotenv-expand) to load additional environment variables from the following files in your environment directory:
@@ -64,7 +65,16 @@ export default function loadEnv(config?: Config): Record<string, string> {
 	const resolvedConfig: ResolvedConfig = {folder: '', useModeEnv: 'MODE', ...config};
 	let {mode, folder, useModeEnv} = resolvedConfig;
 	if (!mode) {
-		mode = process.env[useModeEnv];
+		if (typeof useModeEnv === 'string') {
+			mode = process.env[useModeEnv];
+		} else {
+			for (const variable of useModeEnv) {
+				mode = process.env[variable];
+				if (mode) {
+					break;
+				}
+			}
+		}
 	}
 	const env: Record<string, string> = {};
 	const envFiles = [/** default file */ `.env`, /** local file */ `.env.local`];
