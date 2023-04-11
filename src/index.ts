@@ -61,7 +61,7 @@ type ResolvedConfig = Config & {folder: string; useModeEnv: string | string[]};
  * @param config - The configuration optiom
  * @returns The parsed env variable
  */
-export default function loadEnv(config?: Config): Record<string, string> {
+export function loadEnv(config?: Config): Record<string, string> {
 	const resolvedConfig: ResolvedConfig = {folder: '', useModeEnv: 'MODE', ...config};
 	let {mode, folder, useModeEnv} = resolvedConfig;
 	if (!mode) {

@@ -1,2 +1,2 @@
-import loadEnv from '.';
+import {loadEnv} from '.';
 loadEnv();
