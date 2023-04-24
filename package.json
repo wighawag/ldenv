@@ -1,6 +1,6 @@
 {
-	"name": "dotenv-set",
-	"version": "0.2.0",
+	"name": "ldenv",
+	"version": "0.0.1",
 	"description": "load multiple env files based on mode",
 	"publishConfig": {
 		"access": "public"
@@ -10,7 +10,7 @@
 	"module": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"bin": {
-		"dotenv-set": "dist/cli.cjs"
+		"ldenv": "dist/cli.cjs"
 	},
 	"dependencies": {
 		"dotenv": "^16.0.3",
