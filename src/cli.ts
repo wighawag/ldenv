@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/env node
 import { loadEnv } from '.';
 import { parse as dotenvParse } from 'dotenv';
 import fs from 'fs';
