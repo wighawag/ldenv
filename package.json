@@ -1,6 +1,6 @@
 {
 	"name": "ldenv",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"description": "load multiple env files based on mode",
 	"publishConfig": {
 		"access": "public"
@@ -27,6 +27,7 @@
 	"scripts": {
     "prepare": "set-defaults .vscode",
 		"build": "tsup --entry src/index.ts --entry src/cli.ts --dts --format esm,cjs",
+    "dev": "tsup --entry src/index.ts --entry src/cli.ts --dts --watch --format esm,cjs",
 		"gen-docs": "typedoc --out docs src",
 		"serve-docs": "ipfs-emulator --only -d docs -p 8080"
 	}
