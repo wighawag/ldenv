@@ -19,11 +19,13 @@
 	"devDependencies": {
 		"@types/node": "^18.15.5",
 		"ipfs-gateway-emulator": "4.2.1-ipfs.2",
+    "set-defaults": "^0.0.1",
 		"tsup": "^6.7.0",
 		"typedoc": "^0.23.28",
 		"typescript": "^4.9.5"
 	},
 	"scripts": {
+    "prepare": "set-defaults .vscode",
 		"build": "tsup --entry src/index.ts --entry src/cli.ts --dts --format esm,cjs",
 		"gen-docs": "typedoc --out docs src",
 		"serve-docs": "ipfs-emulator --only -d docs -p 8080"
