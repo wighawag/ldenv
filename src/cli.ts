@@ -80,12 +80,15 @@ for (let i = 0; i < commandArgs.length; i++) {
   const arg = commandArgs[i];
   if (arg === '@@') {
     const nextArg = commandArgs[i + 1];
-    if (!mode && typeof nextArg === 'undefined') {
-      error(`error: expect to be provided a mode (which set the ${env_mode_name} env variable) as last argument`);
+    if (nextArg) {
+      mode = nextArg;
     }
-    mode = nextArg;
     commandArgs.splice(i, 2);
     i--;
+
+    if (!mode) {
+      error(`error: expect to be provided a mode (which set the ${env_mode_name} env variable) as last argument`);
+    }
   }
 }
 
