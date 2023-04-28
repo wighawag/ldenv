@@ -172,43 +172,46 @@ function parseArguments(commandArgs: string[]) {
 }
 
 function parseMultipleCommands(args: string[]) {
-  let firstCommandArgs: string[] = args;
-  let secondCommandStart = false;
-  let secondCommandArray: string[] | undefined;
+  let firstCommandArgs: string[] | undefined;
+  let moreCommandArrays: string[][] = [];
   let buffer: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '~~') {
-      if (!secondCommandStart) {
-        secondCommandStart = true;
+      if (!firstCommandArgs) {
         firstCommandArgs = buffer;
-        buffer = [];
-      } else if (!secondCommandArray) {
-        secondCommandArray = buffer;
-        buffer = [];
       } else {
-        buffer.push(arg);
+        moreCommandArrays.push(buffer);
       }
+      buffer = [];
     } else {
       buffer.push(arg);
     }
   }
 
-  if (secondCommandStart) {
-    if (!secondCommandArray && buffer.length > 0) {
-      secondCommandArray = buffer;
+  if (!firstCommandArgs) {
+    firstCommandArgs = args;
+  } else {
+    if (buffer.length > 0) {
+      // moreCommandArrays.push(buffer);
+      for (const extra_arg of buffer) {
+        firstCommandArgs.push(extra_arg);
+      }
       buffer = [];
-    }
-
-    for (const extra_arg of buffer) {
-      firstCommandArgs.push(extra_arg);
     }
   }
 
-  const secondCommand = secondCommandArray ? (secondCommandArray.length > 0 ? secondCommandArray[0] : undefined) : undefined;
-  const secondCommandArgs = secondCommand ? secondCommandArray?.slice(1) : undefined
+  const extra_commands: { command: string, args: string[] }[] = [];
+  for (const arr of moreCommandArrays) {
+    if (arr[0]) {
+      extra_commands.push({
+        command: arr[0],
+        args: arr.slice(1)
+      });
+    }
+  }
 
-  return { firstCommandArgs, secondCommand, secondCommandArgs };
+  return { firstCommandArgs, extra_commands };
 }
 
 if (parse) {
@@ -219,10 +222,12 @@ if (parse) {
   const firstCommandArgs = parseArguments(commands.firstCommandArgs);
   try {
     execFileSync(command!, firstCommandArgs, { stdio: ['inherit', 'inherit', 'inherit'] });
-    if (commands.secondCommand) {
+    if (commands.extra_commands.length > 0) {
+      for (const extra_command of commands.extra_commands) {
+        const parsedArgs = parseArguments(extra_command.args || []);
+        execFileSync(extra_command.command, parsedArgs, { stdio: ['inherit', 'inherit', 'inherit'] });
+      }
 
-      const parsedArgs = parseArguments(commands.secondCommandArgs || []);
-      execFileSync(commands.secondCommand, parsedArgs, { stdio: ['inherit', 'inherit', 'inherit'] });
     }
   } catch { }
 } else {
