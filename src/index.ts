@@ -4,7 +4,7 @@
  * @module dotenv-set
  */
 
-import {parse} from 'dotenv';
+import {parse as dotenvParse} from 'dotenv';
 import {expand} from 'dotenv-expand';
 import fs from 'node:fs';
 import {lookupFile} from './utils';
@@ -35,7 +35,7 @@ export type Config = {
 	useModeEnv?: string | string[];
 };
 
-type ResolvedConfig = Config & {folder: string; useModeEnv: string | string[]};
+type ResolvedConfig = Config & {folder: string};
 
 /**
  * Uses [dotenv](https://github.com/motdotla/dotenv) and [dotenv-expand](https://github.com/motdotla/dotenv-expand) to load additional environment variables from the following files in your environment directory:
@@ -62,8 +62,34 @@ type ResolvedConfig = Config & {folder: string; useModeEnv: string | string[]};
  * @returns The parsed env variable
  */
 export function loadEnv(config?: Config): Record<string, string> {
-	const resolvedConfig: ResolvedConfig = {folder: '', useModeEnv: 'MODE', ...config};
+	const resolvedConfig: ResolvedConfig = {folder: '', useModeEnv: undefined, ...config};
 	let {mode, folder, useModeEnv} = resolvedConfig;
+	if (!useModeEnv) {
+		// we first get the MODE_ENV name
+		// we get from the environment if there else we get from the .env and .env.local
+		let mode_env_name = process.env['MODE_ENV'];
+		if (!mode_env_name) {
+			try {
+				const parsed = dotenvParse(fs.readFileSync('.env', {encoding: 'utf-8'}));
+				Object.entries(parsed).forEach(function ([key, value]) {
+					if (key === 'MODE_ENV') {
+						mode_env_name = value;
+					}
+				});
+			} catch {}
+			try {
+				const parsed2 = dotenvParse(fs.readFileSync('.env.local', {encoding: 'utf-8'}));
+				Object.entries(parsed2).forEach(function ([key, value]) {
+					if (key === 'MODE_ENV') {
+						mode_env_name = value;
+					}
+				});
+			} catch {}
+		}
+		// we fallback on MODE
+		useModeEnv = mode_env_name || 'MODE';
+	}
+
 	if (!mode) {
 		if (typeof useModeEnv === 'string') {
 			mode = process.env[useModeEnv];
@@ -76,6 +102,11 @@ export function loadEnv(config?: Config): Record<string, string> {
 			}
 		}
 	}
+
+	if (!mode) {
+		mode = 'local';
+	}
+
 	const env: Record<string, string> = {};
 	const envFiles = [/** default file */ `.env`, /** local file */ `.env.local`];
 	if (mode && mode !== 'local') {
@@ -89,7 +120,7 @@ export function loadEnv(config?: Config): Record<string, string> {
 				rootDir: folder,
 			});
 			if (!path) return [];
-			return Object.entries(parse(fs.readFileSync(path)));
+			return Object.entries(dotenvParse(fs.readFileSync(path)));
 		})
 	);
 
@@ -99,6 +130,17 @@ export function loadEnv(config?: Config): Record<string, string> {
 	for (const [key, value] of Object.entries(parsed)) {
 		env[key] = value;
 	}
+
+	if (typeof useModeEnv === 'string') {
+		process.env[useModeEnv] = mode;
+		env[useModeEnv] = mode;
+	} else {
+		for (const v of useModeEnv) {
+			process.env[v] = mode;
+			env[v] = mode;
+		}
+	}
+
 	// return the resulting parsed env
 	return env;
 }
