@@ -9,6 +9,7 @@ interface LookupFileOptions {
 }
 
 export function lookupFile(dir: string, formats: string[], options?: LookupFileOptions): string | undefined {
+	const dirFullPath = path.resolve(dir);
 	for (const format of formats) {
 		const fullPath = path.join(dir, format);
 		if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
@@ -18,13 +19,14 @@ export function lookupFile(dir: string, formats: string[], options?: LookupFileO
 			}
 		}
 	}
-	const parentDir = path.dirname(dir);
+	const parentDir = path.dirname(dirFullPath);
 	if (parentDir !== dir && (!options?.rootDir || parentDir.startsWith(options?.rootDir))) {
 		return lookupFile(parentDir, formats, options);
 	}
 }
 
 function _lookupMultipleFiles(dir: string, formats: string[], files: string[], options?: LookupFileOptions): void {
+	const dirFullPath = path.resolve(dir);
 	for (const format of formats) {
 		const fullPath = path.join(dir, format);
 		if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
@@ -34,7 +36,7 @@ function _lookupMultipleFiles(dir: string, formats: string[], files: string[], o
 			}
 		}
 	}
-	const parentDir = path.dirname(dir);
+	const parentDir = path.dirname(dirFullPath);
 	if (parentDir !== dir && (!options?.rootDir || parentDir.startsWith(options?.rootDir))) {
 		_lookupMultipleFiles(parentDir, formats, files, options);
 	}
