@@ -64,31 +64,6 @@ type ResolvedConfig = Config;
 export function loadEnv(config?: Config): Record<string, string> {
 	const resolvedConfig: ResolvedConfig = {...config};
 	let {mode, folder, useModeEnv} = resolvedConfig;
-	if (!useModeEnv) {
-		// we first get the MODE_ENV name
-		// we get from the environment if there else we get from the .env and .env.local
-		let mode_env_name = process.env['MODE_ENV'];
-		if (!mode_env_name) {
-			try {
-				const parsed = dotenvParse(fs.readFileSync('.env', {encoding: 'utf-8'}));
-				Object.entries(parsed).forEach(function ([key, value]) {
-					if (key === 'MODE_ENV') {
-						mode_env_name = value;
-					}
-				});
-			} catch {}
-			try {
-				const parsed2 = dotenvParse(fs.readFileSync('.env.local', {encoding: 'utf-8'}));
-				Object.entries(parsed2).forEach(function ([key, value]) {
-					if (key === 'MODE_ENV') {
-						mode_env_name = value;
-					}
-				});
-			} catch {}
-		}
-		// we fallback on MODE
-		useModeEnv = mode_env_name || 'MODE';
-	}
 
 	if (!folder) {
 		folder = process.env['ENV_ROOT_FOLDER'];
@@ -116,6 +91,38 @@ export function loadEnv(config?: Config): Record<string, string> {
 	}
 
 	const env_root = folder || '';
+
+	if (!useModeEnv) {
+		// we first get the MODE_ENV name
+		// we get from the environment if there else we get from the .env and .env.local
+		let mode_env_name = process.env['MODE_ENV'];
+		if (!mode_env_name) {
+			try {
+				const content = lookupFile('', ['.env'], {rootDir: env_root});
+				if (content) {
+					const parsed = dotenvParse(content);
+					Object.entries(parsed).forEach(function ([key, value]) {
+						if (key === 'MODE_ENV') {
+							mode_env_name = value;
+						}
+					});
+				}
+			} catch {}
+			try {
+				const content = lookupFile('', ['.env.local'], {rootDir: env_root});
+				if (content) {
+					const parsed = dotenvParse(content);
+					Object.entries(parsed).forEach(function ([key, value]) {
+						if (key === 'MODE_ENV') {
+							mode_env_name = value;
+						}
+					});
+				}
+			} catch {}
+		}
+		// we fallback on MODE
+		useModeEnv = mode_env_name || 'MODE';
+	}
 
 	if (!mode) {
 		if (typeof useModeEnv === 'string') {
