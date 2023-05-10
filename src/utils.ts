@@ -20,7 +20,8 @@ export function lookupFile(dir: string, formats: string[], options?: LookupFileO
 		}
 	}
 	const parentDir = path.dirname(dirFullPath);
-	if (parentDir !== dir && (!options?.rootDir || parentDir.startsWith(options?.rootDir))) {
+	const absoluteRootDir = options?.rootDir ? path.resolve(options.rootDir) : undefined;
+	if (parentDir !== dir && (!absoluteRootDir || parentDir.startsWith(absoluteRootDir))) {
 		return lookupFile(parentDir, formats, options);
 	}
 }
@@ -37,7 +38,8 @@ function _lookupMultipleFiles(dir: string, formats: string[], files: string[], o
 		}
 	}
 	const parentDir = path.dirname(dirFullPath);
-	if (parentDir !== dir && (!options?.rootDir || parentDir.startsWith(options?.rootDir))) {
+	const absoluteRootDir = options?.rootDir ? path.resolve(options.rootDir) : undefined;
+	if (parentDir !== dir && (!absoluteRootDir || parentDir.startsWith(absoluteRootDir))) {
 		_lookupMultipleFiles(parentDir, formats, files, options);
 	}
 }
