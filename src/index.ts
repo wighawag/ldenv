@@ -90,7 +90,7 @@ export function loadEnv(config?: Config): Record<string, string> {
 		}
 	}
 
-	const env_root = folder || '';
+	const env_root = folder || '.';
 
 	if (!useModeEnv) {
 		// we first get the MODE_ENV name
@@ -98,7 +98,7 @@ export function loadEnv(config?: Config): Record<string, string> {
 		let mode_env_name = process.env['MODE_ENV'];
 		if (!mode_env_name) {
 			try {
-				const content = lookupFile('', ['.env'], {rootDir: env_root});
+				const content = lookupFile('.', ['.env'], {rootDir: env_root});
 				if (content) {
 					const parsed = dotenvParse(content);
 					Object.entries(parsed).forEach(function ([key, value]) {
@@ -109,7 +109,7 @@ export function loadEnv(config?: Config): Record<string, string> {
 				}
 			} catch {}
 			try {
-				const content = lookupFile('', ['.env.local'], {rootDir: env_root});
+				const content = lookupFile('.', ['.env.local'], {rootDir: env_root});
 				if (content) {
 					const parsed = dotenvParse(content);
 					Object.entries(parsed).forEach(function ([key, value]) {
