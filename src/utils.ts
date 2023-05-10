@@ -23,3 +23,25 @@ export function lookupFile(dir: string, formats: string[], options?: LookupFileO
 		return lookupFile(parentDir, formats, options);
 	}
 }
+
+function _lookupMultipleFiles(dir: string, formats: string[], files: string[], options?: LookupFileOptions): void {
+	for (const format of formats) {
+		const fullPath = path.join(dir, format);
+		if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+			const result = options?.pathOnly ? fullPath : fs.readFileSync(fullPath, 'utf-8');
+			if (!options?.predicate || options.predicate(result)) {
+				files.push(result);
+			}
+		}
+	}
+	const parentDir = path.dirname(dir);
+	if (parentDir !== dir && (!options?.rootDir || parentDir.startsWith(options?.rootDir))) {
+		_lookupMultipleFiles(parentDir, formats, files, options);
+	}
+}
+
+export function lookupMultipleFiles(dir: string, formats: string[], options?: LookupFileOptions): string[] {
+	const files: string[] = [];
+	_lookupMultipleFiles(dir, formats, files, options);
+	return files;
+}

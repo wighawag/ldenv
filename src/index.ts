@@ -35,7 +35,7 @@ export type Config = {
 	useModeEnv?: string | string[];
 };
 
-type ResolvedConfig = Config & {folder: string};
+type ResolvedConfig = Config;
 
 /**
  * Uses [dotenv](https://github.com/motdotla/dotenv) and [dotenv-expand](https://github.com/motdotla/dotenv-expand) to load additional environment variables from the following files in your environment directory:
@@ -49,12 +49,12 @@ type ResolvedConfig = Config & {folder: string};
  *
  * @example
  * ```ts
- * import loadEnv from 'dotenv-set';
+ * import {loadEnv} from 'ldenv';
  * loadEnv();
  * ```
  * @example
  * ```ts
- * import loadEnv from 'dotenv-set';
+ * import {loadEnv} from 'ldenv';
  * loadEnv({mode: 'production'});
  * ```
  *
@@ -62,7 +62,7 @@ type ResolvedConfig = Config & {folder: string};
  * @returns The parsed env variable
  */
 export function loadEnv(config?: Config): Record<string, string> {
-	const resolvedConfig: ResolvedConfig = {folder: '', useModeEnv: undefined, ...config};
+	const resolvedConfig: ResolvedConfig = {...config};
 	let {mode, folder, useModeEnv} = resolvedConfig;
 	if (!useModeEnv) {
 		// we first get the MODE_ENV name
@@ -90,6 +90,33 @@ export function loadEnv(config?: Config): Record<string, string> {
 		useModeEnv = mode_env_name || 'MODE';
 	}
 
+	if (!folder) {
+		folder = process.env['ENV_ROOT_FOLDER'];
+		if (!folder) {
+			try {
+				const parsed = dotenvParse(fs.readFileSync('.env', {encoding: 'utf-8'}));
+				Object.entries(parsed).forEach(function ([key, value]) {
+					if (key === 'ENV_ROOT_FOLDER') {
+						folder = value;
+					}
+				});
+			} catch {}
+			try {
+				const parsed2 = dotenvParse(fs.readFileSync('.env.local', {encoding: 'utf-8'}));
+				Object.entries(parsed2).forEach(function ([key, value]) {
+					if (key === 'ENV_ROOT_FOLDER') {
+						folder = value;
+					}
+				});
+			} catch {}
+			try {
+				folder = fs.readFileSync('.root.env', {encoding: 'utf-8'});
+			} catch {}
+		}
+	}
+
+	const env_root = folder || '';
+
 	if (!mode) {
 		if (typeof useModeEnv === 'string') {
 			mode = process.env[useModeEnv];
@@ -115,9 +142,9 @@ export function loadEnv(config?: Config): Record<string, string> {
 
 	const parsed = Object.fromEntries(
 		envFiles.flatMap((file) => {
-			const path = lookupFile(folder, [file], {
+			const path = lookupFile('', [file], {
 				pathOnly: true,
-				rootDir: folder,
+				rootDir: env_root,
 			});
 			if (!path) return [];
 			return Object.entries(dotenvParse(fs.readFileSync(path)));
