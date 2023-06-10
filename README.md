@@ -25,7 +25,7 @@ ldenv echo @@GREETINGS
 contract with what using the shell (where GREETINGS will not be resolved unless the dotenv file was injected in the environment to begin with):
 
 ```bash
-ldenv echo $GREETINGS
+echo $GREETINGS
 ```
 
 # Import As Module
