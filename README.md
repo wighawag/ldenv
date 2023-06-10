@@ -16,10 +16,16 @@ This will provide to `command` the environment variable set in the `.env`, `.env
 
 ldenv also support resolving variable in the command and args provided.
 
-this will display the content of the environment variable "GREETINGS" if it is defined in one of the `.env` files
+the following will display the content of the environment variable "GREETINGS" if it is defined in one of the `.env` files
 
 ```bash
 ldenv echo @@GREETINGS
+```
+
+contract with what using the shell (where GREETINGS will not be resolved unless the dotenv file was inject in the environment to begin with):
+
+```bash
+ldenv echo $GREETINGS
 ```
 
 # Import As Module
