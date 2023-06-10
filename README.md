@@ -1,3 +1,29 @@
+This module is both a module to be imported and a command line utility that load environment variables from dot env files
+
+# Use as a command-line
+
+ldenv is a simple yet very powerful command line tool
+
+Its basic purpose is to load .env file and execute a command with the environment set for it
+
+Basic usage:
+
+```bash
+ldenv <command> [...args]
+```
+
+This will provide to `command` the environment variable set in the `.env`, `.env.local`, etc... (see [#import-as-module](#import-as-module) for details.
+
+ldenv also support resolving variable in the command and args provided.
+
+this will display the content of the environment variable "GREETINGS" if it is defined in one of the `.env` files
+
+```bash
+ldenv echo @@GREETINGS
+```
+
+# Import As Module
+
 This module expose a single function that uses [dotenv](https://github.com/motdotla/dotenv) and [dotenv-expand](https://github.com/motdotla/dotenv-expand) to load additional environment variables from the following files in your environment directory:
 
 ```
