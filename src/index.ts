@@ -7,7 +7,7 @@
 import {parse as dotenvParse} from 'dotenv';
 import {expand} from 'dotenv-expand';
 import fs from 'node:fs';
-import {lookupFile} from './utils';
+import {lookupFile, lookupMultipleFiles} from './utils';
 
 /**
  * Configuration Options
@@ -149,12 +149,18 @@ export function loadEnv(config?: Config): Record<string, string> {
 
 	const parsed = Object.fromEntries(
 		envFiles.flatMap((file) => {
-			const path = lookupFile('', [file], {
+			const paths = lookupMultipleFiles('', [file], {
 				pathOnly: true,
 				rootDir: env_root,
 			});
-			if (!path) return [];
-			return Object.entries(dotenvParse(fs.readFileSync(path)));
+			if (paths.length === 0) return [];
+			const result: [string, string][] = [];
+			// we reverse the list as we want the first fetch (child) to take precedence
+			for (const path of paths.reverse()) {
+				const newEntries = Object.entries(dotenvParse(fs.readFileSync(path)));
+				result.push(...newEntries);
+			}
+			return result;
 		})
 	);
 
