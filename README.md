@@ -50,6 +50,12 @@ You can also use the commas seperated list of env variable to fallback on
 ldenv echo @@NON_EXISTENT,GREETINGS
 ```
 
+note that you can still provide prefix and suffix (note the need for `@:` to let ldenv know where the env name stop)
+
+```bash
+ldenv echo _@@NON_EXISTENT,GREETINGS@:_
+```
+
 ## env variable name based on another env variable
 
 ldenv allow you to resolve env variable whose name depends on another env variable too.
