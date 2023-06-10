@@ -122,7 +122,7 @@ function parseArguments(commandArgs: string[]) {
 						}
 					}
 					value = value || default_value;
-					if (!value) {
+					if (!hasSuffix && !value) {
 						error(`
         error: @@${to_parse} was specified in the command but there is no env variable named ${var_name}.
         To prevent this error you can provide a default value with '@@${var_name}@:<default value>@:'
