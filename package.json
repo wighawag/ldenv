@@ -29,6 +29,7 @@
     "build": "tsup --entry src/index.ts --entry src/cli.ts --dts --format esm,cjs",
     "dev": "tsup --entry src/index.ts --entry src/cli.ts --dts --watch --format esm,cjs",
     "gen-docs": "typedoc --out docs src",
-    "serve-docs": "ipfs-emulator --only -d docs -p 8080"
+    "serve-docs": "ipfs-emulator --only -d docs -p 8080",
+    "try:greetings": "cd examples/greetings; node ../../dist/cli.cjs"
   }
 }

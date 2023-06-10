@@ -6,13 +6,15 @@ ldenv is a simple yet very powerful command line tool
 
 Its basic purpose is to load .env file and execute a command with the environment set for it
 
-Basic usage:
+## Basic usage:
 
 ```bash
 ldenv <command> [...args]
 ```
 
 This will provide to `command` the environment variable set in the `.env`, `.env.local`, etc... (see [#import-as-module](#import-as-module) for details.
+
+## ldenv can resolve variable in the command line itself:
 
 ldenv also support resolving variable in the command and args provided.
 
@@ -26,6 +28,48 @@ contract this with using the shell (where GREETINGS will not be resolved unless 
 
 ```bash
 echo $GREETINGS
+```
+
+## default values
+
+By default, if a env variable requested is missing, ldenv will abort with an error
+
+```bash
+ldenv echo @@GREETINGS
+```
+
+You can instead provide a default value, including the empty string (which is equivalent to not setting the variable):
+
+```bash
+ldenv echo @@GREETINGS@:<default value>@:
+```
+
+You can also use the commas seperated list of env variable to fallback on
+
+```bash
+ldenv echo @@NON_EXISTENT,GREETINGS
+```
+
+## env variable name based on another env variable
+
+ldenv allow you to resolve env variable whose name depends on another env variable too.
+
+Here we construct the env var name `TARGET_<mode>` where mode is the mode used by ldenv (see [#import-as-module](#import-as-module) ) and is specified by `-m bonjour`. this result in the env var `TARGET_bonjour`
+
+```bash
+ldenv -m bonjour echo @@GREETINGS @@TARGET_:MODE
+```
+
+## sequential execution
+
+ldenv also support executing multiple commands by wrapping further command using `~~`
+
+```bash
+ldenv echo @@NON_EXISTENT,GREETINGS ~~ echo next ~~
+```
+
+```bash
+ldenv echo @@NON_EXISTENT,GREETINGS ~~ echo next ~~ echo again ~~
 ```
 
 # Import As Module
