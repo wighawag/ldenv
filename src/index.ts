@@ -25,6 +25,9 @@ export type Config = {
 	 * @remarks if `mode === 'local'` then it will just load `.env` and `env.local`
 	 */
 	mode?: string;
+	/** This let you specify the default mode if no mode are specified explicitly.
+	 * By default it is 'local' */
+	defaultMode?: string;
 	/** This let you specify a specific folder to load the .env file from.
 	 * By default it use the current directory */
 	folder?: string;
@@ -138,7 +141,7 @@ export function loadEnv(config?: Config): Record<string, string> {
 	}
 
 	if (!mode) {
-		mode = 'local';
+		mode = config?.defaultMode || 'local';
 	}
 
 	const env: Record<string, string> = {};

@@ -10,6 +10,7 @@ function error(msg: string) {
 }
 
 let mode: string | undefined;
+let defaultMode: string | undefined;
 let mode_env_name: string | undefined;
 let parse = true;
 
@@ -27,6 +28,13 @@ for (let i = 0; i < args.length; i++) {
 			mode = args[i + 1];
 			if (!mode) {
 				error(`-m arg specified but no mode`);
+			}
+			i += 1;
+		}
+		if (arg === '-d') {
+			defaultMode = args[i + 1];
+			if (!defaultMode) {
+				error(`-d arg specified but no default mode`);
 			}
 			i += 1;
 		} else if (arg === '-n') {
@@ -59,8 +67,8 @@ for (let i = 0; i < commandArgs.length; i++) {
 		commandArgs.splice(i, 2);
 		i--;
 
-		if (!mode) {
-			error(`error: expect to be provided a mode as last argument`);
+		if (!mode && !defaultMode) {
+			error(`error: expect to be provided a mode as last argument, or have an expliclty defined defaultMode`);
 		}
 	}
 }
@@ -71,6 +79,7 @@ if (typeof mode === 'string' && mode.length === 0) {
 
 // we are now ready to load the environment
 loadEnv({
+	defaultMode,
 	mode,
 	useModeEnv: mode_env_name,
 });
