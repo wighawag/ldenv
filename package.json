@@ -1,6 +1,6 @@
 {
   "name": "ldenv",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "load multiple env files based on mode",
   "publishConfig": {
     "access": "public"

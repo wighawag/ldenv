@@ -30,8 +30,7 @@ for (let i = 0; i < args.length; i++) {
 				error(`-m arg specified but no mode`);
 			}
 			i += 1;
-		}
-		if (arg === '-d') {
+		} else if (arg === '-d') {
 			defaultMode = args[i + 1];
 			if (!defaultMode) {
 				error(`-d arg specified but no default mode`);
