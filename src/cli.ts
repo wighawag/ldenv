@@ -60,7 +60,7 @@ for (let i = 0; i < commandArgs.length; i++) {
 	const arg = commandArgs[i];
 	if (arg === '@@') {
 		const nextArg = commandArgs[i + 1];
-		if (nextArg) {
+		if (nextArg && nextArg != '--') {
 			mode = nextArg;
 		}
 		commandArgs.splice(i, 2);
@@ -84,68 +84,84 @@ loadEnv({
 });
 
 function parseArguments(commandArgs: string[]) {
-	const newArgs = commandArgs.map((arg) => {
-		const [prefix, ...list_to_parse] = arg.split('@@');
-		if (list_to_parse.length > 0) {
-			// if there are ny @@ we process them in turn
-			// we also ensure we save the prefix (could be "")
-			// Note that ldenv will not allow you to use @@
-			// TODO allow to escape  @@
-			const combined = list_to_parse
-				.map((to_parse) => {
-					// we get the var_name as first value by splitting via '@:'
-					// the rest is the default value / suffix pair
-					const [var_name, potential_default_value, potential_suffix] = to_parse.split('@:');
+	const newArgs = commandArgs
+		.map((arg) => {
+			const [prefix, ...list_to_parse] = arg.split('@@');
+			let newArg;
+			if (list_to_parse.length > 0) {
+				// if there are ny @@ we process them in turn
+				// we also ensure we save the prefix (could be "")
+				// Note that ldenv will not allow you to use @@
+				// TODO allow to escape  @@
+				const combined = list_to_parse
+					.map((to_parse) => {
+						// we get the var_name as first value by splitting via '@:'
+						// the rest is the default value / suffix pair
+						const [var_name, potential_default_value, potential_suffix] = to_parse.split('@:');
 
-					if (var_name.length === 0) {
-						error(`error: this is not valid : '@@${to_parse}' please specify an ENV var name after '@@'`);
-					}
-
-					const hasSuffix = typeof potential_suffix !== 'undefined';
-					const suffix = hasSuffix ? potential_suffix : potential_default_value;
-					const default_value = hasSuffix ? potential_default_value : undefined;
-
-					// fallback var_name is allowed, they are separated by ","
-					const var_names = var_name.split(',');
-
-					let value;
-					for (const name of var_names) {
-						// each of these var_name can be composed of other env value (no recursion, just one level)
-						const splitted_by_colon = name.split(':');
-						// console.log({ splitted_by_colon })
-						const actual_name = splitted_by_colon
-							.map((v, index) => {
-								if (index % 2 == 0) {
-									return v;
-								} else {
-									return process.env[v];
-								}
-							})
-							.join('');
-						// console.log({ actual_name })
-						value = process.env[actual_name];
-						if (value) {
-							// if we find one of the comma separated list matching, we exit
-							break;
+						if (var_name.length === 0) {
+							error(`error: this is not valid : '@@${to_parse}' please specify an ENV var name after '@@'`);
 						}
-					}
-					value = value || default_value;
-					if (!hasSuffix && !value) {
-						error(`
-        error: @@${to_parse} was specified in the command but there is no env variable named ${var_name}.
-        To prevent this error you can provide a default value with '@@${var_name}@:<default value>@:'
-        An empty default can be specified with '@@${var_name}@:@:'
-        `);
-					}
-					// console.log({ prefix, var_name, default_value, suffix, value })
-					return value + (suffix || '');
-				})
-				.join('');
-			return prefix + combined;
-		} else {
-			return arg;
-		}
-	});
+
+						const hasSuffix = typeof potential_suffix !== 'undefined';
+						const suffix = hasSuffix ? potential_suffix : potential_default_value;
+						const default_value = hasSuffix ? potential_default_value : undefined;
+
+						// fallback var_name is allowed, they are separated by ","
+						const var_names = var_name.split(',');
+
+						let value;
+						for (const name of var_names) {
+							// each of these var_name can be composed of other env value (no recursion, just one level)
+							const splitted_by_colon = name.split(':');
+							// console.log({ splitted_by_colon })
+							const actual_name = splitted_by_colon
+								.map((v, index) => {
+									if (index % 2 == 0) {
+										return v;
+									} else {
+										return process.env[v];
+									}
+								})
+								.join('');
+							// console.log({ actual_name })
+							value = process.env[actual_name];
+							if (value) {
+								// if we find one of the comma separated list matching, we exit
+								break;
+							}
+						}
+						value = value || default_value;
+						if (!hasSuffix && !value) {
+							error(`
+error: @@${to_parse} was specified in the command but there is no env variable named ${var_name}.
+To prevent this error you can provide a default value with '@@${var_name}@:<default value>@:'
+An empty default can be specified with '@@${var_name}@:@:'
+						`);
+						}
+						// console.log({ prefix, var_name, default_value, suffix, value })
+						return value + (suffix || '');
+					})
+					.join('');
+				newArg = prefix + combined;
+			} else {
+				newArg = arg;
+			}
+			if (newArg.startsWith('@=')) {
+				const definition = newArg.slice(2).split('=');
+				if (definition.length != 2) {
+					error(`
+error: defintions need exactly 2 component, env variable name and value. '@=<var name>=<value>'
+					`);
+				}
+				const envVarName = definition[0];
+				const value = definition[1];
+				process.env[envVarName] = value;
+				return null; // skip it
+			}
+			return newArg;
+		})
+		.filter((v) => !!v) as string[];
 	return newArgs;
 }
 
