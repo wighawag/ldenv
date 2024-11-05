@@ -36,6 +36,7 @@ export type Config = {
 	 * It can also be a list of string and it will take the first one that is defined
 	 */
 	useModeEnv?: string | string[];
+	defaultEnvFile?: string;
 };
 
 type ResolvedConfig = Config;
@@ -146,6 +147,9 @@ export function loadEnv(config?: Config): Record<string, string> {
 
 	const env: Record<string, string> = {};
 	const envFiles = [/** default file */ `.env`, /** local file */ `.env.local`];
+	if (config?.defaultEnvFile) {
+		envFiles.unshift(config.defaultEnvFile);
+	}
 	if (mode && mode !== 'local') {
 		envFiles.push(/** mode file */ `.env.${mode}`, /** mode local file */ `.env.${mode}.local`);
 	}
