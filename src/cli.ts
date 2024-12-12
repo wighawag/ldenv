@@ -13,6 +13,7 @@ let mode: string | undefined;
 let defaultMode: string | undefined;
 let mode_env_name: string | undefined;
 let parse = true;
+let verbose = true;
 
 let commandArgs: string[] = [];
 let command: string | undefined;
@@ -44,6 +45,8 @@ for (let i = 0; i < args.length; i++) {
 			i += 1;
 		} else if (arg === '-P') {
 			parse = false;
+		} else if (arg === '--verbose') {
+			verbose = true;
 		} else {
 			error(`arg not recognized: ${arg}`);
 		}
@@ -215,16 +218,27 @@ if (parse) {
 
 	const firstCommandArgs = parseArguments(commands.firstCommandArgs);
 	try {
+		if (verbose) {
+			console.log(`executing (parsed): ${command} ${firstCommandArgs.join(' ')}`);
+		}
 		execFileSync(command!, firstCommandArgs, {stdio: 'inherit'});
 		if (commands.extra_commands.length > 0) {
+			let i = 0;
 			for (const extra_command of commands.extra_commands) {
 				const parsedArgs = parseArguments(extra_command.args || []);
+				if (verbose) {
+					console.log(`executing:${i} (parsed): ${extra_command.command} ${parsedArgs.join(' ')}`);
+				}
 				execFileSync(extra_command.command, parsedArgs, {stdio: 'inherit'});
+				i++;
 			}
 		}
 	} catch {}
 } else {
 	try {
+		if (verbose) {
+			console.log(`executing (no parsing): ${command} ${commandArgs.join(' ')}`);
+		}
 		execFileSync(command!, commandArgs, {stdio: 'inherit'});
 	} catch {}
 }
