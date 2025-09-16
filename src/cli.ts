@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import {loadEnv} from '.';
-import {execFileSync} from 'child_process';
+import {execFileSync, execSync} from 'child_process';
 
 const args = process.argv.slice(2);
 
@@ -17,6 +17,7 @@ let verbose = true;
 
 let commandArgs: string[] = [];
 let command: string | undefined;
+let useGitBranchNameAsDefaultMode = false;
 // basic arg parsing (no long form)
 for (let i = 0; i < args.length; i++) {
 	const arg = args[i];
@@ -43,6 +44,8 @@ for (let i = 0; i < args.length; i++) {
 				error(`-n arg specified but no env var name`);
 			}
 			i += 1;
+		} else if (arg === '--git') {
+			useGitBranchNameAsDefaultMode = true;
 		} else if (arg === '-P') {
 			parse = false;
 		} else if (arg === '--verbose') {
@@ -55,6 +58,27 @@ for (let i = 0; i < args.length; i++) {
 
 if (!command) {
 	error(`no command specified`);
+}
+
+if (useGitBranchNameAsDefaultMode) {
+	function getGitBranch() {
+		try {
+			return execSync('git rev-parse --abbrev-ref HEAD', {encoding: 'utf8'}).trim();
+		} catch (error: any) {
+			console.error('Error getting Git branch:', error.message);
+			return null;
+		}
+	}
+
+	const branchName = getGitBranch();
+	if (branchName) {
+		if (branchName.indexOf('/') !== -1) {
+			const splitted = branchName.split('/');
+			defaultMode = splitted[splitted.length - 1];
+		} else {
+			defaultMode = branchName;
+		}
+	}
 }
 
 // now we process each arg in turn to find the lone @@
