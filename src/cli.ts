@@ -62,6 +62,10 @@ if (!command) {
 
 if (useGitBranchNameAsDefaultMode) {
 	function getGitBranch() {
+		// VERCEL need this:
+		if (process.env.VERCEL_GIT_COMMIT_REF) {
+			return process.env.VERCEL_GIT_COMMIT_REF;
+		}
 		try {
 			return execSync('git rev-parse --abbrev-ref HEAD', {encoding: 'utf8'}).trim();
 		} catch (error: any) {
