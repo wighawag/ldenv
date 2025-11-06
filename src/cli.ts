@@ -66,6 +66,10 @@ if (useGitBranchNameAsDefaultMode) {
 		if (process.env.VERCEL_GIT_COMMIT_REF) {
 			return process.env.VERCEL_GIT_COMMIT_REF;
 		}
+		// NETLIFY need this:
+		if (process.env.BRANCH) {
+			return process.env.BRANCH;
+		}
 		try {
 			return execSync('git rev-parse --abbrev-ref HEAD', {encoding: 'utf8'}).trim();
 		} catch (error: any) {
@@ -105,6 +109,10 @@ for (let i = 0; i < commandArgs.length; i++) {
 
 if (typeof mode === 'string' && mode.length === 0) {
 	error(`error: mode has been specified as argument, but it is empty`);
+}
+
+if (verbose) {
+	console.log(`using defaultMode: ${defaultMode}, mode: ${mode} and use mode env name: ${mode_env_name}`);
 }
 
 // we are now ready to load the environment
