@@ -13,7 +13,7 @@ let mode: string | undefined;
 let defaultMode: string | undefined;
 let mode_env_name: string | undefined;
 let parse = true;
-let verbose = true;
+let verbose = false;
 
 let commandArgs: string[] = [];
 let command: string | undefined;
