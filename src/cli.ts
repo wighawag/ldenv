@@ -252,10 +252,14 @@ if (parse) {
 
 	// console.log({ commands })
 
+	const numExtraCommands = commands.extra_commands.length;
+	const numCommands = numExtraCommands + 1;
 	const firstCommandArgs = parseArguments(commands.firstCommandArgs);
 	try {
 		if (verbose) {
-			console.log(`executing (parsed): ${command} ${firstCommandArgs.join(' ')}`);
+			console.log(
+				`executing${numExtraCommands > 0 ? `:1/${numCommands}` : ''} (parsed): ${command} ${firstCommandArgs.join(' ')}`,
+			);
 		}
 		execFileSync(command!, firstCommandArgs, {stdio: 'inherit'});
 		if (commands.extra_commands.length > 0) {
@@ -263,18 +267,34 @@ if (parse) {
 			for (const extra_command of commands.extra_commands) {
 				const parsedArgs = parseArguments(extra_command.args || []);
 				if (verbose) {
-					console.log(`executing:${i} (parsed): ${extra_command.command} ${parsedArgs.join(' ')}`);
+					console.log(`executing:${i + 2}/${numCommands} (parsed): ${extra_command.command} ${parsedArgs.join(' ')}`);
 				}
+				// try {
 				execFileSync(extra_command.command, parsedArgs, {stdio: 'inherit'});
+				// } catch (err: any) {
+				// 	// TODO
+				// 	// if && should stop right away
+				// 	// if || continue and show last error
+				// }
 				i++;
 			}
 		}
-	} catch {}
+	} catch (e: any) {
+		if (verbose) {
+			console.error(e.message);
+		}
+		process.exit(1);
+	}
 } else {
 	try {
 		if (verbose) {
 			console.log(`executing (no parsing): ${command} ${commandArgs.join(' ')}`);
 		}
 		execFileSync(command!, commandArgs, {stdio: 'inherit'});
-	} catch {}
+	} catch (e: any) {
+		if (verbose) {
+			console.error(e.message);
+		}
+		process.exit(1);
+	}
 }
