@@ -5,3 +5,5 @@ dist
 # Editor directories and files
 .vscode/*
 !*.default
+
+tmp/
