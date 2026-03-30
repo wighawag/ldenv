@@ -18,11 +18,13 @@ export class EnvFileWatcher {
 	/**
 	 * Start watching the specified files
 	 * @param filePaths - Absolute paths to .env files to watch
+	 * @param mode - The resolved mode (e.g., 'development', 'production')
 	 * @param onChange - Callback to invoke when any file changes
 	 * @param options - Watcher options
 	 */
 	async watch(
 		filePaths: string[],
+		mode: string,
 		onChange: () => void,
 		options: WatcherOptions = {},
 	): Promise<void> {
@@ -40,11 +42,12 @@ export class EnvFileWatcher {
 		const cwd = process.cwd();
 		directories.add(cwd);
 
-		// Create a set of file basenames we care about for quick lookup
-		const watchedBasenames = new Set(filePaths.map((f) => path.basename(f)));
-		// Add common .env patterns that might be created
-		watchedBasenames.add('.env');
-		watchedBasenames.add('.env.local');
+		// Build watch list: base files + mode-specific files
+		const watchedBasenames = new Set(['.env', '.env.local']);
+		if (mode && mode !== 'local') {
+			watchedBasenames.add(`.env.${mode}`);
+			watchedBasenames.add(`.env.${mode}.local`);
+		}
 
 		for (const dir of directories) {
 			await this.subscribeToDirectory(dir, watchedBasenames);
@@ -67,8 +70,8 @@ export class EnvFileWatcher {
 
 			for (const event of events) {
 				const basename = path.basename(event.path);
-				// Check if this is an .env file we care about
-				if (watchedBasenames.has(basename) || basename.startsWith('.env')) {
+				// Check if this is an .env file we care about (base or mode-specific)
+				if (watchedBasenames.has(basename)) {
 					console.log(`[ldenv] ${basename} changed, reloading...`);
 					this.debouncedCallback?.();
 					break; // Only trigger once per batch of events

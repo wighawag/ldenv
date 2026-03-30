@@ -73,8 +73,9 @@ async function runWatchMode(): Promise<void> {
 	envManager.captureBaseEnv();
 
 	let loadedFiles: string[] = [];
+	let resolvedMode: string = 'local';
 
-	function loadEnvAndGetFiles(): string[] {
+	function loadEnvAndGetFiles(): {files: string[]; mode: string} {
 		// Restore base environment (remove previous .env vars)
 		envManager.restoreBaseEnv();
 
@@ -92,7 +93,7 @@ async function runWatchMode(): Promise<void> {
 			console.log(`[ldenv] Loaded files: ${result.loadedFiles.join(', ')}`);
 		}
 
-		return result.loadedFiles;
+		return {files: result.loadedFiles, mode: result.mode};
 	}
 
 	async function startCommand(): Promise<void> {
@@ -112,7 +113,8 @@ async function runWatchMode(): Promise<void> {
 		}
 
 		// Reload environment
-		loadedFiles = loadEnvAndGetFiles();
+		const envResult = loadEnvAndGetFiles();
+		loadedFiles = envResult.files;
 
 		// Start command (don't await)
 		await startCommand();
@@ -130,10 +132,13 @@ async function runWatchMode(): Promise<void> {
 	process.on('SIGTERM', cleanup);
 
 	// Initial load to get file list for watching
-	loadedFiles = loadEnvAndGetFiles();
+	const initialEnv = loadEnvAndGetFiles();
+	loadedFiles = initialEnv.files;
+	resolvedMode = initialEnv.mode;
 
 	// Start watching BEFORE executing the command
-	await fileWatcher.watch(loadedFiles, () => {
+	// Pass the mode so watcher only reacts to relevant .env files
+	await fileWatcher.watch(loadedFiles, resolvedMode, () => {
 		restartWithFreshEnv();
 	});
 
