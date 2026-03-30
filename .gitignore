@@ -7,3 +7,4 @@ dist
 !*.default
 
 tmp/
+plans/
