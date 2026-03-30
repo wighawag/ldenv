@@ -8,7 +8,11 @@ interface LookupFileOptions {
 	predicate?: (file: string) => boolean;
 }
 
-export function lookupFile(dir: string, formats: string[], options?: LookupFileOptions): string | undefined {
+export function lookupFile(
+	dir: string,
+	formats: string[],
+	options?: LookupFileOptions,
+): string | undefined {
 	const dirFullPath = path.resolve(dir);
 	for (const format of formats) {
 		const fullPath = path.join(dir, format);
@@ -26,7 +30,12 @@ export function lookupFile(dir: string, formats: string[], options?: LookupFileO
 	}
 }
 
-function _lookupMultipleFiles(dir: string, formats: string[], files: string[], options?: LookupFileOptions): void {
+function _lookupMultipleFiles(
+	dir: string,
+	formats: string[],
+	files: string[],
+	options?: LookupFileOptions,
+): void {
 	const dirFullPath = path.resolve(dir);
 	for (const format of formats) {
 		const fullPath = path.join(dir, format);
@@ -44,7 +53,11 @@ function _lookupMultipleFiles(dir: string, formats: string[], files: string[], o
 	}
 }
 
-export function lookupMultipleFiles(dir: string, formats: string[], options?: LookupFileOptions): string[] {
+export function lookupMultipleFiles(
+	dir: string,
+	formats: string[],
+	options?: LookupFileOptions,
+): string[] {
 	const files: string[] = [];
 	_lookupMultipleFiles(dir, formats, files, options);
 	return files;

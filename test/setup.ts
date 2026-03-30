@@ -11,87 +11,160 @@ let originalEnv: NodeJS.ProcessEnv;
 let originalCwd: string;
 
 export function setupTestEnv() {
-  beforeEach(() => {
-    originalEnv = {...process.env};
-    originalCwd = process.cwd();
-    // Clear MODE and related vars that might interfere with tests
-    delete process.env.MODE;
-    delete process.env.MODE_ENV;
-    delete process.env.ENV_ROOT_FOLDER;
-  });
+	beforeEach(() => {
+		originalEnv = {...process.env};
+		originalCwd = process.cwd();
+		// Clear MODE and related vars that might interfere with tests
+		delete process.env.MODE;
+		delete process.env.MODE_ENV;
+		delete process.env.ENV_ROOT_FOLDER;
+	});
 
-  afterEach(() => {
-    // Restore original environment
-    for (const key of Object.keys(process.env)) {
-      if (!(key in originalEnv)) {
-        delete process.env[key];
-      }
-    }
-    for (const [key, value] of Object.entries(originalEnv)) {
-      process.env[key] = value;
-    }
-    process.chdir(originalCwd);
-  });
+	afterEach(() => {
+		// Restore original environment
+		for (const key of Object.keys(process.env)) {
+			if (!(key in originalEnv)) {
+				delete process.env[key];
+			}
+		}
+		for (const [key, value] of Object.entries(originalEnv)) {
+			process.env[key] = value;
+		}
+		process.chdir(originalCwd);
+	});
 }
 
 // Helper to create temporary .env files
 export function createEnvFile(dir: string, filename: string, content: string): string {
-  const filepath = path.join(dir, filename);
-  fs.mkdirSync(dir, {recursive: true});
-  fs.writeFileSync(filepath, content);
-  return filepath;
+	const filepath = path.join(dir, filename);
+	fs.mkdirSync(dir, {recursive: true});
+	fs.writeFileSync(filepath, content);
+	return filepath;
 }
 
 // Helper to run CLI and capture output
 export function runCli(
-  args: string[],
-  options?: {
-    cwd?: string;
-    env?: Record<string, string>;
-  }
+	args: string[],
+	options?: {
+		cwd?: string;
+		env?: Record<string, string>;
+	},
 ): Promise<{stdout: string; stderr: string; exitCode: number}> {
-  return new Promise((resolve) => {
-    const cliPath = path.resolve(__dirname, '../dist/cli.cjs');
-    const proc = spawn('node', [cliPath, ...args], {
-      cwd: options?.cwd || process.cwd(),
-      env: {...process.env, ...options?.env},
-      shell: true,
-    });
+	return new Promise((resolve) => {
+		const cliPath = path.resolve(__dirname, '../dist/cli.cjs');
+		const proc = spawn('node', [cliPath, ...args], {
+			cwd: options?.cwd || process.cwd(),
+			env: {...process.env, ...options?.env},
+			shell: true,
+		});
 
-    let stdout = '';
-    let stderr = '';
+		let stdout = '';
+		let stderr = '';
 
-    proc.stdout?.on('data', (data) => {
-      stdout += data.toString();
-    });
+		proc.stdout?.on('data', (data) => {
+			stdout += data.toString();
+		});
 
-    proc.stderr?.on('data', (data) => {
-      stderr += data.toString();
-    });
+		proc.stderr?.on('data', (data) => {
+			stderr += data.toString();
+		});
 
-    proc.on('close', (code) => {
-      resolve({stdout, stderr, exitCode: code ?? 0});
-    });
-  });
+		proc.on('close', (code) => {
+			resolve({stdout, stderr, exitCode: code ?? 0});
+		});
+	});
 }
 
 // Helper to create a temp directory for test fixtures
 export function createTempDir(): string {
-  const tmpDir = path.join(
-    __dirname,
-    '.tmp',
-    `test-${Date.now()}-${Math.random().toString(36).slice(2)}`
-  );
-  fs.mkdirSync(tmpDir, {recursive: true});
-  return tmpDir;
+	const tmpDir = path.join(
+		__dirname,
+		'.tmp',
+		`test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+	);
+	fs.mkdirSync(tmpDir, {recursive: true});
+	return tmpDir;
 }
 
 // Helper to clean up temp directories
 export function cleanupTempDir(dir: string): void {
-  fs.rmSync(dir, {recursive: true, force: true});
+	fs.rmSync(dir, {recursive: true, force: true});
 }
 
 // Helper to get fixture path
 export function getFixturePath(fixtureName: string): string {
-  return path.join(__dirname, 'fixtures', fixtureName);
+	return path.join(__dirname, 'fixtures', fixtureName);
+}
+
+// Helper to run CLI in watch mode with timeout and ability to modify files
+export interface WatchCliResult {
+	stdout: string;
+	stderr: string;
+	exitCode: number;
+	killed: boolean;
+}
+
+export function runWatchCli(
+	args: string[],
+	options: {
+		cwd?: string;
+		env?: Record<string, string>;
+		timeoutMs?: number;
+		onStart?: (modifyEnvFile: (filename: string, content: string) => void, kill: () => void) => void;
+	},
+): Promise<WatchCliResult> {
+	return new Promise((resolve) => {
+		const cliPath = path.resolve(__dirname, '../dist/cli.cjs');
+		const timeoutMs = options.timeoutMs ?? 3000;
+		const cwd = options.cwd || process.cwd();
+		
+		const proc = spawn('node', [cliPath, '-w', ...args], {
+			cwd,
+			env: {...process.env, ...options.env},
+		});
+
+		let stdout = '';
+		let stderr = '';
+		let killed = false;
+
+		proc.stdout?.on('data', (data) => {
+			stdout += data.toString();
+		});
+
+		proc.stderr?.on('data', (data) => {
+			stderr += data.toString();
+		});
+
+		// Helper to modify an env file
+		const modifyEnvFile = (filename: string, content: string) => {
+			const filepath = path.join(cwd, filename);
+			fs.writeFileSync(filepath, content);
+		};
+
+		// Helper to kill the process
+		const kill = () => {
+			killed = true;
+			proc.kill('SIGTERM');
+		};
+
+		// Set up timeout to kill the process
+		const timeout = setTimeout(() => {
+			if (!killed) {
+				killed = true;
+				proc.kill('SIGTERM');
+			}
+		}, timeoutMs);
+
+		proc.on('close', (code) => {
+			clearTimeout(timeout);
+			resolve({stdout, stderr, exitCode: code ?? 0, killed});
+		});
+
+		// Call onStart callback after a short delay to allow process to start
+		if (options.onStart) {
+			setTimeout(() => {
+				options.onStart!(modifyEnvFile, kill);
+			}, 500);
+		}
+	});
 }

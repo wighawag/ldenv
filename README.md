@@ -78,6 +78,49 @@ ldenv echo @@NON_EXISTENT,GREETINGS ~~ echo next ~~
 ldenv echo @@NON_EXISTENT,GREETINGS ~~ echo next ~~ echo again ~~
 ```
 
+## Watch Mode
+
+ldenv supports a watch mode that monitors `.env` files for changes and automatically re-runs your command when changes are detected.
+
+### Basic watch usage:
+
+```bash
+ldenv -w <command> [...args]
+```
+
+### Examples:
+
+Watch mode with a development server:
+
+```bash
+ldenv -w node server.js
+```
+
+Watch mode with a specific mode:
+
+```bash
+ldenv -m development -w npm run dev
+```
+
+Watch mode with sequential commands:
+
+```bash
+ldenv -w npm run build ~~ npm run serve ~~
+```
+
+### Behavior:
+
+- When any `.env` file changes, the running process receives SIGTERM for graceful shutdown
+- Environment variables are reloaded fresh from the `.env` files
+- External environment variables (set before ldenv runs) are preserved
+- The command is then re-executed with the new environment
+
+### Notes:
+
+- Watch mode monitors all loaded `.env` files (`.env`, `.env.local`, `.env.<mode>`, etc.)
+- Changes are debounced to prevent rapid restarts
+- Press Ctrl+C to stop watch mode
+
 # Import As Module
 
 This module expose a single function that uses [dotenv](https://github.com/motdotla/dotenv) and [dotenv-expand](https://github.com/motdotla/dotenv-expand) to load additional environment variables from the following files in your environment directory:

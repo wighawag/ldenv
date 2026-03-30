@@ -7,6 +7,7 @@
 import {parse as dotenvParse} from 'dotenv';
 import {expand} from 'dotenv-expand';
 import fs from 'node:fs';
+import path from 'node:path';
 import {lookupFile, lookupMultipleFiles} from './utils';
 
 /**
@@ -42,32 +43,24 @@ export type Config = {
 type ResolvedConfig = Config;
 
 /**
- * Uses [dotenv](https://github.com/motdotla/dotenv) and [dotenv-expand](https://github.com/motdotla/dotenv-expand) to load additional environment variables from the following files in your environment directory:
- *
- * ```
- * .env                # loaded in all cases
- * .env.local          # loaded in all cases, ignored by git
- * .env.[mode]         # only loaded in specified mode
- * .env.[mode].local   # only loaded in specified mode, ignored by git
- * ```
- *
- * @example
- * ```ts
- * import {loadEnv} from 'ldenv';
- * loadEnv();
- * ```
- * @example
- * ```ts
- * import {loadEnv} from 'ldenv';
- * loadEnv({mode: 'production'});
- * ```
- *
- * @param config - The configuration optiom
- * @returns The parsed env variable
+ * Result from loadEnvWithInfo containing env vars and metadata
  */
-export function loadEnv(config?: Config): Record<string, string> {
+export type LoadEnvResult = {
+	/** The parsed and expanded environment variables */
+	env: Record<string, string>;
+	/** Absolute paths of all .env files that were loaded */
+	loadedFiles: string[];
+	/** The resolved mode that was used */
+	mode: string;
+};
+
+/**
+ * Internal implementation that returns full info
+ */
+function _loadEnvInternal(config?: Config): LoadEnvResult {
 	const resolvedConfig: ResolvedConfig = {...config};
 	let {mode, folder, useModeEnv} = resolvedConfig;
+	const loadedFiles: string[] = [];
 
 	if (!folder) {
 		folder = process.env['ENV_ROOT_FOLDER'];
@@ -97,8 +90,6 @@ export function loadEnv(config?: Config): Record<string, string> {
 	const env_root = folder || '.';
 
 	if (!useModeEnv) {
-		// we first get the MODE_ENV name
-		// we get from the environment if there else we get from the .env and .env.local
 		let mode_env_name = process.env['MODE_ENV'];
 		if (!mode_env_name) {
 			try {
@@ -124,7 +115,6 @@ export function loadEnv(config?: Config): Record<string, string> {
 				}
 			} catch {}
 		}
-		// we fallback on MODE
 		useModeEnv = mode_env_name || 'MODE';
 	}
 
@@ -146,12 +136,12 @@ export function loadEnv(config?: Config): Record<string, string> {
 	}
 
 	const env: Record<string, string> = {};
-	const envFiles = [/** default file */ `.env`, /** local file */ `.env.local`];
+	const envFiles = [`.env`, `.env.local`];
 	if (config?.defaultEnvFile) {
 		envFiles.unshift(config.defaultEnvFile);
 	}
 	if (mode && mode !== 'local') {
-		envFiles.push(/** mode file */ `.env.${mode}`, /** mode local file */ `.env.${mode}.local`);
+		envFiles.push(`.env.${mode}`, `.env.${mode}.local`);
 	}
 
 	const parsed = Object.fromEntries(
@@ -163,15 +153,19 @@ export function loadEnv(config?: Config): Record<string, string> {
 			if (paths.length === 0) return [];
 			const result: [string, string][] = [];
 			// we reverse the list as we want the first fetch (child) to take precedence
-			for (const path of paths.reverse()) {
-				const newEntries = Object.entries(dotenvParse(fs.readFileSync(path)));
+			for (const filePath of paths.reverse()) {
+				// Track loaded files (convert to absolute path)
+				const absolutePath = path.resolve(filePath);
+				if (!loadedFiles.includes(absolutePath)) {
+					loadedFiles.push(absolutePath);
+				}
+				const newEntries = Object.entries(dotenvParse(fs.readFileSync(filePath)));
 				result.push(...newEntries);
 			}
 			return result;
-		})
+		}),
 	);
 
-	// let environment variables use each other and set them to process.env
 	expand({parsed});
 
 	for (const [key, value] of Object.entries(parsed)) {
@@ -188,6 +182,51 @@ export function loadEnv(config?: Config): Record<string, string> {
 		}
 	}
 
-	// return the resulting parsed env
-	return env;
+	return {env, loadedFiles, mode};
+}
+
+/**
+ * Uses [dotenv](https://github.com/motdotla/dotenv) and [dotenv-expand](https://github.com/motdotla/dotenv-expand) to load additional environment variables from the following files in your environment directory:
+ *
+ * ```
+ * .env                # loaded in all cases
+ * .env.local          # loaded in all cases, ignored by git
+ * .env.[mode]         # only loaded in specified mode
+ * .env.[mode].local   # only loaded in specified mode, ignored by git
+ * ```
+ *
+ * @example
+ * ```ts
+ * import {loadEnv} from 'ldenv';
+ * loadEnv();
+ * ```
+ * @example
+ * ```ts
+ * import {loadEnv} from 'ldenv';
+ * loadEnv({mode: 'production'});
+ * ```
+ *
+ * @param config - The configuration optiom
+ * @returns The parsed env variable
+ */
+export function loadEnv(config?: Config): Record<string, string> {
+	return _loadEnvInternal(config).env;
+}
+
+/**
+ * Load environment variables and return detailed info including loaded file paths.
+ * This is useful for watch mode where you need to know which files to monitor.
+ *
+ * @example
+ * ```ts
+ * import {loadEnvWithInfo} from 'ldenv';
+ * const {env, loadedFiles, mode} = loadEnvWithInfo();
+ * console.log('Loaded files:', loadedFiles);
+ * ```
+ *
+ * @param config - The configuration options
+ * @returns Object containing env vars, loaded file paths, and resolved mode
+ */
+export function loadEnvWithInfo(config?: Config): LoadEnvResult {
+	return _loadEnvInternal(config);
 }
