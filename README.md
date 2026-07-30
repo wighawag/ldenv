@@ -132,6 +132,20 @@ This module expose a single function that uses [dotenv](https://github.com/motdo
 .env.[mode].local   # only loaded in specified mode, ignored by git
 ```
 
+> ### Mode
+>
+> The mode is resolved (in order) from: the `mode` option / `-m` flag / `@@` arg, then the
+> env var named by `MODE_ENV` (defaults to `MODE`), then the `defaultMode` option / `-d` flag
+> (or the current git branch when `--git` is used).
+>
+> When **no mode is configured**, only `.env` and `.env.local` are loaded and the mode env
+> var (e.g. `MODE`) is **left unset** — it is no longer defaulted to `'local'`. This avoids
+> polluting the environment (note that `'local'` is reserved by some tools, e.g. Vite) while
+> keeping the same file-loading behavior.
+>
+> When a mode is set, `.env.<mode>` and `.env.<mode>.local` are loaded in addition, and the
+> resolved mode is exposed via the mode env var so commands can reference it (e.g. `@@MODE`).
+
 > Env Loading Priorities
 >
 > An env file for a specific mode (e.g. `.env.production`) will take higher priority than a generic one (e.g. `.env`).

@@ -27,7 +27,7 @@ export type Config = {
 	 */
 	mode?: string;
 	/** This let you specify the default mode if no mode are specified explicitly.
-	 * By default it is 'local' */
+	 * By default no mode is set (undefined), which loads only `.env` and `.env.local`. */
 	defaultMode?: string;
 	/** This let you specify a specific folder to load the .env file from.
 	 * By default it use the current directory */
@@ -50,8 +50,8 @@ export type LoadEnvResult = {
 	env: Record<string, string>;
 	/** Absolute paths of all .env files that were loaded */
 	loadedFiles: string[];
-	/** The resolved mode that was used */
-	mode: string;
+	/** The resolved mode that was used (undefined when no mode is configured) */
+	mode: string | undefined;
 };
 
 /**
@@ -132,7 +132,7 @@ function _loadEnvInternal(config?: Config): LoadEnvResult {
 	}
 
 	if (!mode) {
-		mode = config?.defaultMode || 'local';
+		mode = config?.defaultMode;
 	}
 
 	const env: Record<string, string> = {};
@@ -172,13 +172,15 @@ function _loadEnvInternal(config?: Config): LoadEnvResult {
 		env[key] = value;
 	}
 
-	if (typeof useModeEnv === 'string') {
-		process.env[useModeEnv] = mode;
-		env[useModeEnv] = mode;
-	} else {
-		for (const v of useModeEnv) {
-			process.env[v] = mode;
-			env[v] = mode;
+	if (mode !== undefined) {
+		if (typeof useModeEnv === 'string') {
+			process.env[useModeEnv] = mode;
+			env[useModeEnv] = mode;
+		} else {
+			for (const v of useModeEnv) {
+				process.env[v] = mode;
+				env[v] = mode;
+			}
 		}
 	}
 

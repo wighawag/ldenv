@@ -24,7 +24,7 @@ export class EnvFileWatcher {
 	 */
 	async watch(
 		filePaths: string[],
-		mode: string,
+		mode: string | undefined,
 		onChange: () => void,
 		options: WatcherOptions = {},
 	): Promise<void> {

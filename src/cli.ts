@@ -73,9 +73,9 @@ async function runWatchMode(): Promise<void> {
 	envManager.captureBaseEnv();
 
 	let loadedFiles: string[] = [];
-	let resolvedMode: string = 'local';
+	let resolvedMode: string | undefined = undefined;
 
-	function loadEnvAndGetFiles(): {files: string[]; mode: string} {
+	function loadEnvAndGetFiles(): {files: string[]; mode: string | undefined} {
 		// Restore base environment (remove previous .env vars)
 		envManager.restoreBaseEnv();
 

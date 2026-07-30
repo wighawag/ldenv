@@ -50,8 +50,8 @@ describe('loadEnv', () => {
 			const result = loadEnv({folder: '.'});
 
 			expect(result.DEFAULT_KEY).toBe('default_value');
-			// Default mode should be 'local'
-			expect(result.MODE).toBe('local');
+			// No mode configured → MODE is left unset
+			expect(result.MODE).toBeUndefined();
 		});
 	});
 
@@ -89,14 +89,14 @@ describe('loadEnv', () => {
 			expect(result.KEY).toBe('local');
 		});
 
-		it('LE-013: default mode is "local"', () => {
+		it('LE-013: no mode configured leaves MODE unset', () => {
 			createEnvFile(tmpDir, '.env', 'KEY=base');
 			createEnvFile(tmpDir, '.env.production', 'KEY=prod');
 
 			const result = loadEnv({folder: '.'});
 
 			expect(result.KEY).toBe('base');
-			expect(result.MODE).toBe('local');
+			expect(result.MODE).toBeUndefined();
 		});
 
 		it('LE-014: should use custom default mode', () => {
